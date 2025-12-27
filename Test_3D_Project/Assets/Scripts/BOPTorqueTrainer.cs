@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem; // Nuevo namespace requerido
+using TMPro;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class BOPTorqueTrainer : MonoBehaviour
 {
@@ -39,6 +41,11 @@ public class BOPTorqueTrainer : MonoBehaviour
     [Tooltip("Volumen de los efectos (0 a 1).")]
     [Range(0f, 1f)] public float sfxVolume = 1.0f;
 
+    [Header("UI")]
+    public TMP_Text feedbackText;
+    [Tooltip("Panel que aparecerá al completar la secuencia")]
+    public GameObject succesPanel;
+
     // Estado interno del juego
     private int _currentIndex = 0;
     private bool _isGameActive = true;
@@ -51,7 +58,11 @@ public class BOPTorqueTrainer : MonoBehaviour
 
     void Start()
     {
-        InitializeSystem();
+        // Inicializar paneles y textos
+        if (feedbackText != null) feedbackText.text = null;
+        succesPanel.SetActive(false);
+
+        //InitializeSystem();
     }
 
     void Update()
@@ -64,12 +75,11 @@ public class BOPTorqueTrainer : MonoBehaviour
     /// <summary>
     /// Configuración inicial por código para evitar asignaciones manuales de componentes.
     /// </summary>
-    void InitializeSystem()
+    public void InitializeSystem()
     {
-        // 1. Autodetectar cámara si no se asignó
+        // 1. Autodetectar cámara si no se asignó y configuración automática del AudioSource
         if (mainCamera == null) mainCamera = Camera.main;
 
-        // Configuración automática del AudioSource
         _audioSource = GetComponent<AudioSource>();
         if (_audioSource == null)
         {
@@ -109,7 +119,7 @@ public class BOPTorqueTrainer : MonoBehaviour
             }
         }
 
-        //Debug.Log($"Sistema iniciado. Secuencia de {targetSequence.Length} pasos lista.");
+        Debug.Log($"Sistema iniciado. Secuencia de {targetSequence.Length} pasos lista.");
     }
 
     /// <summary>
@@ -162,6 +172,7 @@ public class BOPTorqueTrainer : MonoBehaviour
         {
             // --- ACIERTO ---
             Debug.Log($"<color=green>¡Correcto! Paso {_currentIndex + 1} completado.</color>");
+            feedbackText.text = $"<color=green>¡Correcto! Paso {_currentIndex + 1} completado.</color>";
 
             PlaySound(successClip); // Reproducir sonido de éxito
 
@@ -183,6 +194,8 @@ public class BOPTorqueTrainer : MonoBehaviour
         {
             // --- ERROR ---
             Debug.Log($"<color=red>¡Error! Secuencia incorrecta. Debías apretar el perno {_currentIndex + 1}.</color>");
+            feedbackText.text = $"<color=red>¡Error! Secuencia incorrecta. Debías apretar el perno {_currentIndex + 1}.</color>";
+
             PlaySound(errorClip); // Reproducir sonido de error
             StartCoroutine(FlashError(selectedNut));
         }
@@ -236,8 +249,10 @@ public class BOPTorqueTrainer : MonoBehaviour
     void OnTrainingComplete()
     {
         Debug.Log("<b>¡ENTRENAMIENTO COMPLETADO CON ÉXITO!</b>");
+        feedbackText.text = "<b>¡ENTRENAMIENTO COMPLETADO CON ÉXITO!</b>";
         _isGameActive = false;
         // Aquí podrías llamar a una UI de victoria o reiniciar la escena
+        ShowSuccesPanel();
     }
 
     // --- SISTEMA VISUAL ---
@@ -284,5 +299,15 @@ public class BOPTorqueTrainer : MonoBehaviour
         {
             _nutRenderers[t].material.color = c;
         }
+    }
+
+    void ShowSuccesPanel()
+    {
+        succesPanel.SetActive(true);
+    }
+
+    public void RestartMinigame()
+    {
+        SceneManager.LoadScene(0);
     }
 }
